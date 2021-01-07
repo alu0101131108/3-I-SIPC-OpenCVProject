@@ -61,13 +61,7 @@ while (True):
         cnt = contours[0]
         hull2 = cv2.convexHull(cnt,returnPoints = False)
         defects = cv2.convexityDefects(cnt,hull2)
-        
-        rect = cv2.boundingRect(cnt)
-        p1 = (rect[0], rect[1])
-        p2 = (rect[0] + rect[2], rect[1] + rect[3])
-
-        cv2.rectangle(roi, p1, p2, (0, 0, 255), 3)
-        
+          
         if defects is not None:
             for i in range(len(defects)):
                 s,e,f,d = defects[i,0]
@@ -75,17 +69,41 @@ while (True):
                 end = tuple(cnt[e][0])
                 far = tuple(cnt[f][0])
                 depth = d/256.0
-                print(depth)
+                #print(depth)
                 ang = angle(start,end,far)
                 cv2.line(roi,start,end,[255,0,0],2)
                 cv2.circle(roi,far,5,[0,0,255],-1)
 
+        rect = cv2.boundingRect(cnt)
+        p1 = (rect[0], rect[1])
+        p2 = (rect[0] + rect[2], rect[1] + rect[3])
+
+        cv2.rectangle(roi, p1, p2, (0, 0, 255), 3)
+        pmedio = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+
+        circulo = np.zeros((pt2[0] - pt1[0] , pt2[1] - pt1[1], 1), np.uint8)
+        cv2.circle(circulo, pmedio, 65, [255, 255, 255], 1)
+        mask = cv2.bitwise_and(thresh, circulo)
+
+        circle_contours, circle_hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2:]
+        num_dedos = len(circle_contours) - 1
+        
+        if num_dedos > 5:
+            num_dedos = 5
+        if num_dedos < 0:
+            num_dedos = 0
+
+        cv2.putText(frame, 'Dedos: ' + str(num_dedos), (460,70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,250,0), thickness=4)
+        #print(num_dedos)
+
+        cv2.imshow('AND', mask)
 
 
     # mostrasion
     cv2.rectangle(frame, pt1, pt2, (255,0,0))
-    cv2.imshow('frame',frame)
+    cv2.imshow('frame', frame)
     cv2.imshow('ROI', roi)
+    
     
     keyboard = cv2.waitKey(1)
     if keyboard & 0xFF == ord('q'):
