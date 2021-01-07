@@ -2,16 +2,6 @@ import numpy as np
 import cv2
 import math
 
-cap = cv2.VideoCapture(0)
-backSub = cv2.createBackgroundSubtractorMOG2(detectShadows = True)
-
-if not cap.isOpened:
-    print ("Unable to open cam")
-    exit(0)
-
-pt1 = (400, 100)
-pt2 = (600, 300)
-
 def angle(s,e,f):
     v1 = [s[0]-f[0],s[1]-f[1]]
     v2 = [e[0]-f[0],e[1]-f[1]]
@@ -24,49 +14,82 @@ def angle(s,e,f):
         ang += 2*np.pi
     return ang*180/np.pi
 
+cap = cv2.VideoCapture(0)
+if not cap.isOpened:
+    print ("Unable to open cam")
+    exit(0)
+
+ret, bgRef = cap.read()
+bgRef = cv2.flip(bgRef, 1)
+
+pt1 = (400, 100)
+pt2 = (600, 300)
+roiBg = bgRef[pt1[1]:pt2[1],pt1[0]:pt2[0], : ].copy()
+
+roiBg_gray = cv2.cvtColor(roiBg, cv2.COLOR_BGR2GRAY)
+roiBg_gray = cv2.GaussianBlur(roiBg_gray, (21, 21), 0)
+
 while (True):
-    ret, frame = cap.read()
+    ret,frame = cap.read()
     if not ret:
-        exit(0)
+	    exit(0)
 
     frame = cv2.flip(frame, 1)
+	
+    roi = frame[pt1[1]:pt2[1],pt1[0]:pt2[0], : ].copy()
 
-    roi = frame[pt1[1]:pt2[1], pt1[0]:pt2[0], : ].copy()
-    cv2.rectangle(frame, pt1, pt2, (255,0,0))
-    
-    backSub.apply(roi,1)
+    roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    roi_gray = cv2.GaussianBlur(roi_gray, (21, 21), 0)
 
-    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-    ret, bw = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
-    contours, hierarchy = cv2.findContours(bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
-    cv2.drawContours(roi, contours, -1, (0, 255, 0), 3)
+    # In each iteration, calculate absolute difference between current frame and reference frame
+    difference = cv2.absdiff(roi_gray, roiBg_gray)
 
-    if len(contours) != 0:
+    # Apply thresholding to eliminate noise
+    thresh = cv2.threshold(difference, 50, 255, cv2.THRESH_BINARY)[1]
+    thresh = cv2.dilate(thresh, None, iterations=0)
+
+    # contornososos
+    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2:]
+    cv2.drawContours(roi, contours, -1, (0,255,0),3)
+
+    # HULL COCO
+    if (len(contours) > 0):
+        hull = cv2.convexHull(contours[0])
+        cv2.drawContours(roi, [hull], 0, (255,0,0),3)
+
+        # POGGERS
         cnt = contours[0]
-        hull = cv2.convexHull(cnt, returnPoints = False)
-        defects = cv2.convexityDefects(cnt, hull)
+        hull2 = cv2.convexHull(cnt,returnPoints = False)
+        defects = cv2.convexityDefects(cnt,hull2)
+        
+        rect = cv2.boundingRect(cnt)
+        p1 = (rect[0], rect[1])
+        p2 = (rect[0] + rect[2], rect[1] + rect[3])
 
-        # error en defects por algun motivo estraño a veces es lista a veces no
-
-        if isinstance(defects, list):
-
+        cv2.rectangle(roi, p1, p2, (0, 0, 255), 3)
+        
+        if defects is not None:
             for i in range(len(defects)):
-                s, e, f, d = defects[i,0]
+                s,e,f,d = defects[i,0]
                 start = tuple(cnt[s][0])
                 end = tuple(cnt[e][0])
                 far = tuple(cnt[f][0])
                 depth = d/256.0
                 print(depth)
                 ang = angle(start,end,far)
-                cv2.line(roi, start, end, [255,0,0],2)
-                cv2.circle(roi, far, 5, [0,0,255], -1)
+                cv2.line(roi,start,end,[255,0,0],2)
+                cv2.circle(roi,far,5,[0,0,255],-1)
 
+
+
+    # mostrasion
+    cv2.rectangle(frame, pt1, pt2, (255,0,0))
+    cv2.imshow('frame',frame)
     cv2.imshow('ROI', roi)
-    cv2.imshow('frame', frame)
     
     keyboard = cv2.waitKey(1)
     if keyboard & 0xFF == ord('q'):
-        break
+	    break
 
 cap.release()
 cv2.destroyAllWindows()
