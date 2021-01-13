@@ -81,7 +81,7 @@ while (True):
         p2 = (rect[0] + rect[2], rect[1] + rect[3])
         cv2.rectangle(roi, p1, p2, (0, 0, 255), 3)
 
-        # Hallamos el punto medio del bounding rect, y damos un valor inicial a la variable que almacenará el punto más alto.
+        ## Hallamos el punto medio del bounding rect, y damos un valor inicial a la variable que almacenara el punto mas alto.
         pmedio = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
         higherPoint = pmedio
 
@@ -120,7 +120,6 @@ while (True):
             num_fingers = 0
 
         # Se indicara el gesto que esta teniendo lugar actualmente
-
         if isDrawing:
             gesture = "Dibujando"
         elif num_fingers == 0:
