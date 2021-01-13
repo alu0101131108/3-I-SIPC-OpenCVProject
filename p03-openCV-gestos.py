@@ -137,7 +137,8 @@ while (True):
             if higherPoint != pmedio:
                 drawing.append(higherPoint)
             for i in range(len(drawing)):
-                cv2.line(roi, drawing[i], drawing[i + 1], [0, 128, 255], 10)
+                if (len(drawing) > i + 1):
+                    cv2.line(roi, drawing[i], drawing[i + 1], [0, 128, 255], 10)
 
     # Ventanas a mostrar
     cv2.rectangle(frame, pt1, pt2, (255,0,0))
