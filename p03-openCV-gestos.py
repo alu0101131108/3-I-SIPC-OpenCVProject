@@ -75,14 +75,14 @@ while (True):
         hull2 = cv2.convexHull(cnt,returnPoints = False)
         defects = cv2.convexityDefects(cnt,hull2)
           
-        # Hallamos el bounding rect 
+        # Hallamos el bounding rect y lo dibujamos 
         rect = cv2.boundingRect(cnt)
         p1 = (rect[0], rect[1])
         p2 = (rect[0] + rect[2], rect[1] + rect[3])
-
         cv2.rectangle(roi, p1, p2, (0, 0, 255), 3)
-        pmedio = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
 
+        # Hallamos el punto medio del bounding rect, y damos un valor inicial a la variable que almacenará el punto más alto.
+        pmedio = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
         higherPoint = pmedio
 
         # Comprobamos que hayan defectos de convexidad inicializados para poder trabajar con ellos y los hallamos
